@@ -1,0 +1,6 @@
+# Original, uncompressed source videos (too large for GitHub; the
+# lightweight version used by the site lives in assets/hero-bg.mp4)
+movie/
+
+# OS junk
+.DS_Store
