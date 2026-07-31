@@ -13,7 +13,7 @@
   --pad-x: clamp(20px, calc(-10px + 3.9062vw), 40px);
   --space-lg: clamp(60px, calc(-30px + 11.7188vw), 120px);
   --header-h: clamp(60px, calc(0px + 7.8125vw), 100px);
-  --logo-w: clamp(120px, calc(-30px + 19.5312vw), 220px);
+  --logo-w: clamp(130px, calc(-5px + 17.5781vw), 220px);
 }
 
 * {
@@ -48,7 +48,8 @@ a {
   text-decoration: none;
 }
 
-ul {
+ul,
+ol {
   list-style: none;
 }
 
@@ -125,9 +126,9 @@ ul {
   display: none;
   flex-direction: column;
   justify-content: center;
-  gap: 4px;
-  width: 24px;
-  height: 11px;
+  gap: 8px;
+  width: 28px;
+  height: 19px;
   background: none;
   border: none;
   padding: 0;
@@ -138,14 +139,14 @@ ul {
 
 .hamburger__line {
   display: block;
-  width: 24px;
+  width: 28px;
   height: 1px;
   background: var(--color-text);
   transition: transform 0.4s cubic-bezier(0.22, 0.61, 0.36, 1), opacity 0.4s ease;
 }
 
 .hamburger.is-open .hamburger__line:nth-child(1) {
-  transform: translateY(5px) rotate(30deg);
+  transform: translateY(9px) rotate(30deg);
 }
 
 .hamburger.is-open .hamburger__line:nth-child(2) {
@@ -153,7 +154,7 @@ ul {
 }
 
 .hamburger.is-open .hamburger__line:nth-child(3) {
-  transform: translateY(-5px) rotate(-30deg);
+  transform: translateY(-9px) rotate(-30deg);
 }
 
 /* Mobile nav drawer: markup exists at all widths, only functional <=768px */
@@ -728,17 +729,39 @@ ul {
 /* ---------- SP (<=768px): structural layout switches ---------- */
 
 @media (max-width: 768px) {
-  /* Header: swap nav for hamburger */
+  /* Header: swap nav for hamburger, pin header to the top of the viewport */
   .header__nav { display: none; }
   .hamburger { display: flex; }
+  .header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 50;
+    background: var(--color-white);
+  }
 
-  /* Hero: SP crop/positions differ from PC (different image framing) */
-  .hero { aspect-ratio: 375 / 658; }
+  /* Hero: SP crop/positions differ from PC (different image framing).
+     margin-top (not padding-top) compensates for the now-fixed header
+     without disturbing the aspect-ratio-based sizing of the video. */
+  .hero { aspect-ratio: 375 / 658; margin-top: var(--header-h); }
   .hero__logo { left: 3.47%; top: 41.49%; width: 93.07%; }
   .hero__copy { top: 82.5%; }
 
-  /* Concept: single column */
-  .concept__body { flex-direction: column; padding: 0; }
+  /* Concept: single column, text and images interleaved in one flow.
+     The wrapper divs are collapsed via display:contents so each
+     paragraph/image becomes an ordinary flex item of .concept__body,
+     which lets `order` interleave them without touching the PC markup. */
+  .concept__body { flex-direction: column; padding: 0; gap: 24px; }
+  .concept__text,
+  .concept__images {
+    display: contents;
+  }
+  .concept__text p:nth-child(1) { order: 1; }
+  .concept__text p:nth-child(2) { order: 3; }
+  .concept__text p:nth-child(3) { order: 5; }
+  .concept__image--river2 { order: 2; }
+  .concept__image--river4 { order: 4; }
+  .concept__image--river3 { order: 6; }
   .concept__photos {
     position: static;
     height: auto;
@@ -748,9 +771,7 @@ ul {
     flex-direction: column;
     gap: 12px;
   }
-  .concept__photo { position: static; width: 100%; max-width: 100%; }
-  .concept__photo--1 { height: 199px; }
-  .concept__photo--2 { height: 223px; }
+  .concept__photo { position: static; width: 100%; max-width: 100%; height: 200px; }
 
   /* Stool: stack info above image */
   .stool__content { flex-direction: column; }
@@ -761,11 +782,12 @@ ul {
   .detail__row--reverse .detail__image { order: 2; }
   .detail__image { aspect-ratio: auto; height: 212px; }
 
-  /* Steps: stacked list, each item a horizontal label+thumbnail row */
+  /* Steps: stacked list, each item a horizontal label+thumbnail row
+     with a fixed-size thumbnail (per updated SP design) */
   .steps { flex-direction: column; align-items: stretch; }
-  .steps__item { flex-direction: row; width: 100%; }
+  .steps__item { flex-direction: row; justify-content: space-between; width: 100%; }
   .steps__item p { width: auto; white-space: nowrap; flex-shrink: 0; font-size: 15px; }
-  .steps__item img { width: auto; flex: 1 1 0; }
+  .steps__item img { width: 120px; height: 100px; flex: none; }
 
   /* Project: stacked, logo graphic moves below the text block */
   .project__inner { flex-direction: column; align-items: flex-start; }
