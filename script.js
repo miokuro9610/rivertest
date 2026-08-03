@@ -119,3 +119,21 @@
     anim.goToAndStop(LAST_DRAWN_FRAME - 1, true);
   });
 })();
+
+(function () {
+  var track = document.getElementById('jointSteps');
+  var prev = document.getElementById('jointPrev');
+  var next = document.getElementById('jointNext');
+  if (!track || !prev || !next) return;
+
+  function step(direction) {
+    var item = track.querySelector('.steps__item');
+    if (!item) return;
+    var gap = parseFloat(getComputedStyle(track).columnGap || getComputedStyle(track).gap) || 0;
+    var delta = (item.getBoundingClientRect().width + gap) * direction;
+    track.scrollBy({ left: delta, behavior: 'smooth' });
+  }
+
+  prev.addEventListener('click', function () { step(-1); });
+  next.addEventListener('click', function () { step(1); });
+})();

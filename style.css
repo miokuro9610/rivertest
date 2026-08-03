@@ -196,17 +196,21 @@ ol {
 
 .mobile-menu {
   position: fixed;
-  top: var(--header-h);
+  top: 0;
   right: 0;
   width: 65.87%;
   max-width: 247px;
-  height: calc(100vh - var(--header-h));
-  height: calc(100dvh - var(--header-h));
+  height: 100vh;
+  height: 100dvh;
   background: var(--color-dark-green);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  padding: 40px 20px 60px;
+  /* Top padding reserves space for the header row (logo/hamburger,
+     which stay visible above the drawer - see .header's z-index and
+     the menu-open background swap below), since the drawer itself now
+     runs the full height, behind the header. */
+  padding: calc(var(--header-h) + 20px) 20px 60px;
   transform: translateX(100%);
   opacity: 0;
   transition: transform 0.45s cubic-bezier(0.22, 0.61, 0.36, 1), opacity 0.45s ease;
@@ -268,10 +272,6 @@ ol {
   height: calc(100vh - var(--header-h));
   height: calc(100svh - var(--header-h));
   overflow: hidden;
-  /* Fallback/placeholder behind the video: shows immediately and stays
-     visible through .hero__bg's fade-in, and remains as the permanent
-     picture if the video can't play at all. */
-  background: url('assets/hero.jpg') center / cover no-repeat;
 }
 
 .hero__bg {
@@ -631,35 +631,114 @@ ol {
   object-fit: cover;
 }
 
-.steps {
+/* ---------- Joint ("吸い付き桟とは") ---------- */
+
+.joint {
+  background: #d7d7d7;
+  padding: 60px clamp(20px, calc(-40px + 7.8125vw), 60px);
+  display: flex;
+  flex-direction: column;
+  gap: clamp(42px, calc(4.5px + 4.8828vw), 67px);
+}
+
+.joint__header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: clamp(12px, calc(0px + 1.5625vw), 20px);
   width: 100%;
+}
+
+.joint__title {
+  font-family: var(--font-antique);
+  font-weight: 400;
+  font-size: 24px;
+  line-height: 36px;
+  color: var(--color-text);
+}
+
+.joint__nav {
+  display: flex;
+  align-items: center;
+  gap: 36px;
+}
+
+.joint__arrow {
+  display: flex;
+  border: none;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+  color: var(--color-text);
+}
+
+.joint__arrow img {
+  width: 13px;
+  height: 23px;
+}
+
+/* The step list itself: a single scrollable row. Scrollbar hidden and
+   snap points added per the Figma design (arrows/drag are the intended
+   way to move through it, not a visible OS scrollbar). */
+.steps {
+  display: flex;
+  align-items: center;
+  gap: clamp(24px, calc(6px + 2.3438vw), 36px);
+  width: 100%;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.steps::-webkit-scrollbar {
+  display: none;
 }
 
 .steps__item {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: clamp(12px, calc(42px - 2.3438vw), 24px);
-  width: 260px;
-  max-width: 100%;
-  padding-left: 12px;
+  align-items: flex-start;
+  gap: 24px;
+  width: clamp(280px, calc(220px + 7.8125vw), 320px);
+  flex-shrink: 0;
+  padding-left: 20px;
   border-left: 1px solid #000000;
+  scroll-snap-align: start;
 }
 
-.steps__item p {
+.steps__item-text {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
   width: 100%;
-  font-size: 16px;
+}
+
+.steps__item-title {
+  font-family: var(--font-antique);
   line-height: 36px;
+  color: var(--color-text);
+  white-space: nowrap;
+}
+
+.steps__item-step {
+  font-size: 18px;
+}
+
+.steps__item-desc {
+  font-family: var(--font-zen);
+  font-size: 15px;
+  line-height: 28px;
   color: var(--color-text);
 }
 
-.steps__item img {
+.steps__item-image {
   width: 100%;
-  height: clamp(80px, calc(-70px + 19.5312vw), 180px);
+  height: 229px;
+}
+
+.steps__item-image img {
+  width: 100%;
+  height: 100%;
   object-fit: cover;
 }
 
@@ -857,13 +936,34 @@ ol {
     position: fixed;
     top: 0;
     left: 0;
-    /* Must outrank .mobile-menu (65) and .mobile-menu-backdrop (60): the
-       header creates its own stacking context once positioned+z-indexed,
-       so the hamburger's z-index only competes within it, not against
-       these siblings. Keeping header on top keeps the close (X) button
-       both visible and clickable while the drawer is open. */
+    /* Must outrank .mobile-menu (65) and .mobile-menu-backdrop (60).
+       position:fixed always creates a stacking context, so ANY of
+       header's descendants (logo, hamburger) are bounded by header's
+       own place in that comparison - if header itself lost to the
+       drawer, the hamburger would be dragged down and hidden behind it
+       too, no matter how high its own z-index is set. Keeping header on
+       top is what keeps the logo and the close (X) button visible and
+       clickable while the drawer is open; see the background swap below
+       for how the header's own gray bar is made to disappear instead. */
     z-index: 80;
     background: #acacac;
+    transition: background-color 0.3s ease;
+  }
+
+  /* Menu open: instead of the header's own gray bar staying visible
+     above the drawer, make it transparent so the drawer (which now runs
+     the full page height, see .mobile-menu) shows through in its place.
+     The header stays on top (z-index above), so the logo/hamburger keep
+     rendering over the drawer even though the bar itself is invisible.
+     Since the dark green drawer is now what's behind them, the dark
+     logo/icon swap to white so they stay readable there. */
+  body.menu-open .header {
+    background: transparent;
+  }
+  body.menu-open .header__logo-dark { display: none; }
+  body.menu-open .header__logo-white { display: block; }
+  .hamburger.is-open .hamburger__line {
+    background: #ffffff;
   }
 
   /* Hero: on SP the header is position:fixed (removed from flow), so
@@ -921,13 +1021,6 @@ ol {
   .detail__row--reverse .detail__text { order: 1; }
   .detail__row--reverse .detail__image { order: 2; }
   .detail__image { aspect-ratio: auto; height: 212px; }
-
-  /* Steps: stacked list, each item a horizontal label+thumbnail row
-     with a fixed-size thumbnail (per updated SP design) */
-  .steps { flex-direction: column; align-items: stretch; }
-  .steps__item { flex-direction: row; justify-content: space-between; width: 100%; }
-  .steps__item p { width: auto; white-space: nowrap; flex-shrink: 0; font-size: 15px; }
-  .steps__item img { width: 120px; height: 100px; flex: none; }
 
   /* Project: stacked, logo graphic moves below the text block. The
      column layout puts text across the full width, so the PC left-to-right
