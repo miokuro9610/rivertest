@@ -77,6 +77,19 @@ ol {
   align-items: center;
   justify-content: center;
   padding: 0 var(--pad-x);
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 80;
+  background: transparent;
+  transition: background-color 0.3s ease;
+}
+
+/* PC: transparent over the hero, solid once scrolled past it (class is
+   toggled from script.js based on the hero's scroll position). SP
+   overrides this below to stay unconditionally #ACACAC. */
+.header.is-scrolled {
+  background: #acacac;
 }
 
 .header__inner {
@@ -263,12 +276,14 @@ ol {
 .hero {
   position: relative;
   width: 100%;
-  /* One full screen minus the header, so header+hero together fill
-     exactly one viewport on load (the header takes up in-flow space on
-     PC; on SP it's fixed instead, see the margin-top override below).
+  /* The header is position:fixed (both PC and SP) and so out of normal
+     flow; margin-top pushes the hero below it instead of hiding behind
+     it, and the height is reduced by the same amount so margin + height
+     still add up to exactly one screen instead of overshooting it.
      svh excludes mobile browser UI (address bar etc.) that can show/hide,
      so the hero doesn't jump/resize as that chrome appears; falls back
      to vh above where svh isn't supported. */
+  margin-top: var(--header-h);
   height: calc(100vh - var(--header-h));
   height: calc(100svh - var(--header-h));
   overflow: hidden;
@@ -640,6 +655,7 @@ ol {
      frame (1200 wide, 40px margin either side within the 1280 canvas). */
   max-width: 1200px;
   margin: 0 auto;
+  margin-bottom: 120px;
   background: #d7d7d7;
   padding: 60px clamp(20px, calc(-40px + 7.8125vw), 60px);
   display: flex;
@@ -938,22 +954,14 @@ ol {
   /* Header: swap nav for hamburger, pin header to the top of the viewport */
   .header__nav { display: none; }
   .hamburger { display: flex; }
-  .header {
-    position: fixed;
-    top: 0;
-    left: 0;
-    /* Must outrank .mobile-menu (65) and .mobile-menu-backdrop (60).
-       position:fixed always creates a stacking context, so ANY of
-       header's descendants (logo, hamburger) are bounded by header's
-       own place in that comparison - if header itself lost to the
-       drawer, the hamburger would be dragged down and hidden behind it
-       too, no matter how high its own z-index is set. Keeping header on
-       top is what keeps the logo and the close (X) button visible and
-       clickable while the drawer is open; see the background swap below
-       for how the header's own gray bar is made to disappear instead. */
-    z-index: 80;
+  /* position/top/left/z-index/transition already come from the base
+     .header rule. SP just needs to stay unconditionally #ACACAC instead
+     of following the PC scroll-based .is-scrolled toggle - see below for
+     why header must stay a winning, un-nested z-index (65/60 are
+     .mobile-menu/.mobile-menu-backdrop). */
+  .header,
+  .header.is-scrolled {
     background: #acacac;
-    transition: background-color 0.3s ease;
   }
 
   /* Menu open: instead of the header's own gray bar staying visible
@@ -972,10 +980,9 @@ ol {
     background: #ffffff;
   }
 
-  /* Hero: on SP the header is position:fixed (removed from flow), so
-     margin-top pushes the hero below it instead of hiding behind it.
-     The height itself is already header-adjusted in the base rule above. */
-  .hero { margin-top: var(--header-h); }
+  /* Hero: margin-top/height adjustment now lives in the base rule
+     (header is fixed on both breakpoints); SP just needs its own
+     crop/position numbers. */
   .hero__logo { left: 3.47%; top: 41.49%; width: 93.07%; }
   .hero__copy { top: 82.5%; }
 

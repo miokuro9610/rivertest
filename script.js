@@ -1,4 +1,20 @@
 (function () {
+  // PC header: transparent over the hero, solid #ACACAC once scrolled
+  // past it (SP overrides the resulting class in CSS to stay always gray).
+  var header = document.querySelector('.header');
+  var hero = document.querySelector('.hero');
+  if (!header || !hero) return;
+
+  function updateHeaderScrollState() {
+    var pastHero = hero.getBoundingClientRect().bottom <= 0;
+    header.classList.toggle('is-scrolled', pastHero);
+  }
+
+  window.addEventListener('scroll', updateHeaderScrollState, { passive: true });
+  updateHeaderScrollState();
+})();
+
+(function () {
   var toggle = document.getElementById('menuToggle');
   var menu = document.getElementById('mobileMenu');
   var backdrop = document.getElementById('menuBackdrop');
