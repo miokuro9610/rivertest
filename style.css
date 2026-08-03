@@ -112,6 +112,23 @@ ol {
   white-space: nowrap;
 }
 
+.header__nav-list a {
+  position: relative;
+}
+
+.header__nav-list a::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: -2px;
+  width: 100%;
+  height: 1px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.3s ease;
+}
+
 .header__cta {
   display: flex;
   align-items: center;
@@ -251,12 +268,22 @@ ol {
   height: calc(100vh - var(--header-h));
   height: calc(100svh - var(--header-h));
   overflow: hidden;
+  /* Fallback/placeholder behind the video: shows immediately and stays
+     visible through .hero__bg's fade-in, and remains as the permanent
+     picture if the video can't play at all. */
+  background: url('assets/hero.jpg') center / cover no-repeat;
 }
 
 .hero__bg {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+}
+
+.hero__bg.is-ready {
+  opacity: 1;
 }
 
 .hero__logo {
@@ -456,6 +483,7 @@ ol {
 .stool__image {
   width: 100%;
   aspect-ratio: 621 / 672;
+  cursor: pointer;
 }
 
 .stool__image img {
@@ -544,6 +572,10 @@ ol {
   .header__cta:hover,
   .mobile-menu__cta:hover {
     opacity: 0.5;
+  }
+
+  .header__nav-list a:hover::after {
+    transform: scaleX(1);
   }
 }
 
@@ -832,22 +864,6 @@ ol {
        both visible and clickable while the drawer is open. */
     z-index: 80;
     background: #acacac;
-  }
-
-  /* Menu open: the header blends into the drawer instead of remaining a
-     separate gray bar, so it reads as one continuous panel. The dark
-     logo is swapped for the white variant to stay visible on the new
-     background. */
-  body.menu-open .header {
-    background: var(--color-dark-green);
-  }
-  body.menu-open .header__logo-dark { display: none; }
-  body.menu-open .header__logo-white { display: block; }
-
-  /* The X (open state) must stay readable regardless of what's behind
-     it, so it's pinned to white rather than following var(--color-text). */
-  .hamburger.is-open .hamburger__line {
-    background: #ffffff;
   }
 
   /* Hero: on SP the header is position:fixed (removed from flow), so
