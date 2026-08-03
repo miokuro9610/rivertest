@@ -634,6 +634,12 @@ ol {
 /* ---------- Joint ("吸い付き桟とは") ---------- */
 
 .joint {
+  /* Below 1200px this is inert (max-width never constrains anything
+     narrower), so the SP full-bleed gray box is untouched; from 1200px
+     up it caps the box at 1200px and centers it, matching the PC Figma
+     frame (1200 wide, 40px margin either side within the 1280 canvas). */
+  max-width: 1200px;
+  margin: 0 auto;
   background: #d7d7d7;
   padding: 60px clamp(20px, calc(-40px + 7.8125vw), 60px);
   display: flex;
@@ -1021,6 +1027,12 @@ ol {
   .detail__row--reverse .detail__text { order: 1; }
   .detail__row--reverse .detail__image { order: 2; }
   .detail__image { aspect-ratio: auto; height: 212px; }
+
+  /* Joint ("吸い付き桟とは"): SP-only spacing/type tweaks */
+  .joint { margin-bottom: 60px; }
+  .joint__title { font-size: 16px; }
+  .steps__item-title { font-size: 16px; }
+  .steps__item-step { font-size: 16px; }
 
   /* Project: stacked, logo graphic moves below the text block. The
      column layout puts text across the full width, so the PC left-to-right
