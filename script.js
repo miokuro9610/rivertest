@@ -45,3 +45,53 @@
     if (window.innerWidth > 768) closeMenu();
   });
 })();
+
+(function () {
+  var mainImage = document.getElementById('stoolMainImage');
+  var dots = document.querySelectorAll('.stool__dot');
+  if (!mainImage || !dots.length) return;
+
+  dots.forEach(function (dot) {
+    dot.addEventListener('click', function () {
+      var src = dot.getAttribute('data-image');
+      if (src) mainImage.src = src;
+
+      dots.forEach(function (d) {
+        d.classList.remove('is-active');
+        d.setAttribute('aria-current', 'false');
+      });
+      dot.classList.add('is-active');
+      dot.setAttribute('aria-current', 'true');
+    });
+  });
+})();
+
+(function () {
+  var container = document.getElementById('heroLogo');
+  if (!container || typeof lottie === 'undefined' || !window.__HERO_LOGO_DATA) return;
+
+  // logo_mov.json's layers all end (their "op") at frame 90, well before
+  // the composition's own end at frame 120 - frames 90-120 render nothing
+  // because every layer has already finished. Playing only the segment
+  // that actually contains artwork avoids that blank tail entirely.
+  var LAST_DRAWN_FRAME = 90;
+
+  var anim = lottie.loadAnimation({
+    container: container,
+    renderer: 'svg',
+    loop: false,
+    autoplay: false,
+    animationData: window.__HERO_LOGO_DATA
+  });
+
+  anim.addEventListener('DOMLoaded', function () {
+    anim.playSegments([0, LAST_DRAWN_FRAME], true);
+  });
+
+  // Safety net: if it still reaches "complete" past the drawn range for
+  // any reason, freeze it on the last frame that actually has artwork
+  // instead of letting it render blank.
+  anim.addEventListener('complete', function () {
+    anim.goToAndStop(LAST_DRAWN_FRAME - 1, true);
+  });
+})();

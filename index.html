@@ -14,7 +14,8 @@
 <header class="header">
   <div class="header__inner">
     <div class="header__logo">
-      <img src="assets/logo.svg" alt="River">
+      <img class="header__logo-dark" src="assets/logo.svg" alt="River">
+      <img class="header__logo-white" src="assets/logo-white.svg" alt="River">
     </div>
     <nav class="header__nav">
       <ul class="header__nav-list">
@@ -53,7 +54,7 @@
 
   <section class="hero">
     <video class="hero__bg" src="assets/hero-bg.mp4" poster="assets/hero.jpg" autoplay loop muted playsinline></video>
-    <img class="hero__logo" src="assets/river-type-k.png" alt="River">
+    <div class="hero__logo" id="heroLogo" role="img" aria-label="River"></div>
     <h1 class="hero__copy">
       <span>長野・木曽谷で生まれた</span>
       <span>天然木のスツール</span>
@@ -63,36 +64,38 @@
   <section class="concept" id="concept">
     <h2 class="section-heading">コンセプト</h2>
 
-    <div class="concept__body">
-      <div class="concept__text">
-        <p>この椅子が生まれたのは、信州・伊那谷、木曽谷。<br>
-        偉大な山々に囲まれ、谷を刻む川が走り、深い森が広がる土地。<br>
-        降る雨は、天より授かる神仏の恵み。<br>
-        天水は滝となり、川となり、大地を削りながら下界へと流れていく。<br>
-        葉をつたい、根に集まり、木を養う。</p>
+    <div class="concept__group">
+      <div class="concept__body">
+        <div class="concept__text">
+          <p>この椅子が生まれたのは、信州・伊那谷、木曽谷。<br>
+          偉大な山々に囲まれ、谷を刻む川が走り、深い森が広がる土地。<br>
+          降る雨は、天より授かる神仏の恵み。<br>
+          天水は滝となり、川となり、大地を削りながら下界へと流れていく。<br>
+          葉をつたい、根に集まり、木を養う。</p>
 
-        <p>川の流れは止まることがない。<br>
-        その理は川だけではなく、この世のすべてに共通する。<br>
-        木が芽生え、天に向かって伸び、いずれ朽ち、<br>
-        やがて土へと還るように、私たちもまた、<br>
-        生まれ、働き、祈り、やがて大いなる流れへと還っていく。</p>
+          <p>川の流れは止まることがない。<br>
+          その理は川だけではなく、この世のすべてに共通する。<br>
+          木が芽生え、天に向かって伸び、いずれ朽ち、<br>
+          やがて土へと還るように、私たちもまた、<br>
+          生まれ、働き、祈り、やがて大いなる流れへと還っていく。</p>
 
-        <p>この土地に生きる人々は、その流れの実感の中で、<br>
-        山に手を合わせ、木を暮らしの中に息づかせてきた。<br>
-        River stoolは、大いなる山の時間と、<br>
-        止まることのない川の流れをかたちにしたものである。</p>
+          <p>この土地に生きる人々は、その流れの実感の中で、<br>
+          山に手を合わせ、木を暮らしの中に息づかせてきた。<br>
+          River stoolは、大いなる山の時間と、<br>
+          止まることのない川の流れをかたちにしたものである。</p>
+        </div>
+
+        <div class="concept__images">
+          <div class="concept__image concept__image--river2"><img src="assets/river2.jpg" alt=""></div>
+          <div class="concept__image concept__image--river4"><img src="assets/river4.png" alt=""></div>
+          <div class="concept__image concept__image--river3"><img src="assets/river3.jpg" alt=""></div>
+        </div>
       </div>
 
-      <div class="concept__images">
-        <div class="concept__image concept__image--river2"><img src="assets/river2.jpg" alt=""></div>
-        <div class="concept__image concept__image--river4"><img src="assets/river4.png" alt=""></div>
-        <div class="concept__image concept__image--river3"><img src="assets/river3.jpg" alt=""></div>
+      <div class="concept__photos">
+        <div class="concept__photo concept__photo--1"><img src="assets/photo1.jpg" alt=""></div>
+        <div class="concept__photo concept__photo--2"><img src="assets/photo2.jpg" alt=""></div>
       </div>
-    </div>
-
-    <div class="concept__photos">
-      <div class="concept__photo concept__photo--1"><img src="assets/photo1.jpg" alt=""></div>
-      <div class="concept__photo concept__photo--2"><img src="assets/photo2.jpg" alt=""></div>
     </div>
   </section>
 
@@ -102,7 +105,7 @@
       <div class="stool__content">
         <div class="stool__info">
           <div class="stool__text">
-            <p class="stool__name">RIVER STOOL</p>
+            <h3 class="stool__name">RIVER STOOL</h3>
             <p class="stool__spec">
               サイズ：W395×D270×H420mm<br>
               重さ：約2kg<br>
@@ -114,8 +117,15 @@
             <img class="btn-outline__icon" src="assets/arrow.svg" alt="">
           </a>
         </div>
-        <div class="stool__image">
-          <img src="assets/dsc0438.png" alt="River Stool">
+        <div class="stool__gallery">
+          <div class="stool__image">
+            <img src="assets/dsc0438.png" alt="River Stool" id="stoolMainImage">
+          </div>
+          <div class="stool__dots">
+            <button class="stool__dot is-active" type="button" data-image="assets/dsc0438.png" aria-label="商品画像 1" aria-current="true"></button>
+            <button class="stool__dot" type="button" data-image="assets/_DSC0434.png" aria-label="商品画像 2" aria-current="false"></button>
+            <button class="stool__dot" type="button" data-image="assets/_DSC0435.png" aria-label="商品画像 3" aria-current="false"></button>
+          </div>
         </div>
       </div>
     </div>
@@ -192,13 +202,12 @@
     <img class="story__bg" src="assets/story-bg.png" alt="">
     <div class="story__inner">
       <div class="story__text">
-        <p class="story__label">制作ストーリー</p>
-        <p class="story__title">yamatowa × inquire</p>
+        <div class="story__title-block">
+          <img class="story__title-bg" src="assets/story-bg.png" alt="">
+          <h2 class="story__label">制作ストーリー</h2>
+          <h3 class="story__title">yamatowa × inquire</h3>
+        </div>
         <p class="story__body">この椅子は、「森をつくる暮らしをつくる」を実践する「株式会社やまとわ」と、「問いの探究」を理念に据える「株式会社インクワイア」の共同企画で生まれました。 森の恵みで暮らしの「道具」をつくること、そして、その背景にある水の物語を「コンセプト」として紡ぐこと。 やまとわとインクワイア、それぞれの個性を生かして作られたのがこの椅子です。</p>
-        <a class="btn-outline" href="#" target="_blank" rel="noopener">
-          詳しい記事へ
-          <img class="btn-outline__icon" src="assets/arrow2.svg" alt="">
-        </a>
       </div>
       <div class="story__image">
         <img src="assets/story-photo.png" alt="">
@@ -220,6 +229,8 @@
   <p>Copyright © yamatowa co.,Ltd. All Rights Reserved</p>
 </footer>
 
+<script src="https://unpkg.com/lottie-web@5.12.2/build/player/lottie_light.min.js"></script>
+<script src="assets/logo_mov.data.js"></script>
 <script src="script.js"></script>
 </body>
 </html>

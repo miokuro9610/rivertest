@@ -92,6 +92,10 @@ ol {
   height: auto;
 }
 
+.header__logo-white {
+  display: none;
+}
+
 .header__nav {
   display: flex;
   align-items: center;
@@ -175,17 +179,17 @@ ol {
 
 .mobile-menu {
   position: fixed;
-  top: 0;
+  top: var(--header-h);
   right: 0;
   width: 65.87%;
   max-width: 247px;
-  height: 100vh;
-  height: 100dvh;
+  height: calc(100vh - var(--header-h));
+  height: calc(100dvh - var(--header-h));
   background: var(--color-dark-green);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  padding: 60px 20px 60px;
+  padding: 40px 20px 60px;
   transform: translateX(100%);
   opacity: 0;
   transition: transform 0.45s cubic-bezier(0.22, 0.61, 0.36, 1), opacity 0.45s ease;
@@ -238,7 +242,14 @@ ol {
 .hero {
   position: relative;
   width: 100%;
-  aspect-ratio: 944 / 527;
+  /* One full screen minus the header, so header+hero together fill
+     exactly one viewport on load (the header takes up in-flow space on
+     PC; on SP it's fixed instead, see the margin-top override below).
+     svh excludes mobile browser UI (address bar etc.) that can show/hide,
+     so the hero doesn't jump/resize as that chrome appears; falls back
+     to vh above where svh isn't supported. */
+  height: calc(100vh - var(--header-h));
+  height: calc(100svh - var(--header-h));
   overflow: hidden;
 }
 
@@ -253,7 +264,15 @@ ol {
   left: 30.6%;
   top: 37.4%;
   width: 38.7%;
+  /* Reserve the box via the animation's native ratio (500x115) before
+     lottie-web has loaded/measured anything, so nothing shifts once it
+     renders. */
+  aspect-ratio: 500 / 115;
   height: auto;
+}
+
+.hero__logo svg {
+  display: block;
 }
 
 .hero__copy {
@@ -280,6 +299,15 @@ ol {
   gap: clamp(40px, calc(-20px + 7.8125vw), 80px);
   max-width: 1280px;
   margin: 0 auto;
+}
+
+.concept__group {
+  /* On PC this is a pass-through: .concept__body and .concept__photos
+     stay direct flex items of .concept, sharing its single gap value
+     (matches the original PC design, which never distinguished a
+     separate gap between them). SP gives this its own flex/gap so the
+     title-to-content and content-to-photos spacing can differ. */
+  display: contents;
 }
 
 .concept__body {
@@ -415,17 +443,49 @@ ol {
   line-height: 22px;
 }
 
-.stool__image {
+.stool__gallery {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
   width: 100%;
   max-width: 414px;
-  aspect-ratio: 621 / 672;
   flex-shrink: 0;
+}
+
+.stool__image {
+  width: 100%;
+  aspect-ratio: 621 / 672;
 }
 
 .stool__image img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+.stool__dots {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.stool__dot {
+  width: 8px;
+  height: 8px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.4);
+  cursor: pointer;
+  transition: background-color 0.25s ease, width 0.25s ease, height 0.25s ease;
+}
+
+.stool__dot.is-active {
+  width: 11px;
+  height: 11px;
+  background: var(--color-white);
 }
 
 /* ---------- Buttons ---------- */
@@ -466,6 +526,25 @@ ol {
   font-size: clamp(18px, calc(6px + 1.5625vw), 26px);
   line-height: 42px;
   white-space: nowrap;
+}
+
+/* Unified link-button hover: fade to half opacity. Scoped to devices that
+   actually support hover (real mice), so tapping on touch/SP never leaves
+   a button stuck in a "hovered" state. */
+.btn-outline,
+.btn-large,
+.header__cta,
+.mobile-menu__cta {
+  transition: opacity 0.3s ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .btn-outline:hover,
+  .btn-large:hover,
+  .header__cta:hover,
+  .mobile-menu__cta:hover {
+    opacity: 0.5;
+  }
 }
 
 /* ---------- Detail (木のこと / 技のこと) ---------- */
@@ -659,6 +738,16 @@ ol {
   gap: 24px;
 }
 
+.story__title-block {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.story__title-bg {
+  display: none;
+}
+
 .story__label {
   font-size: 20px;
   line-height: 20px;
@@ -736,42 +825,77 @@ ol {
     position: fixed;
     top: 0;
     left: 0;
-    z-index: 50;
-    background: var(--color-white);
+    /* Must outrank .mobile-menu (65) and .mobile-menu-backdrop (60): the
+       header creates its own stacking context once positioned+z-indexed,
+       so the hamburger's z-index only competes within it, not against
+       these siblings. Keeping header on top keeps the close (X) button
+       both visible and clickable while the drawer is open. */
+    z-index: 80;
+    background: #acacac;
   }
 
-  /* Hero: SP crop/positions differ from PC (different image framing).
-     margin-top (not padding-top) compensates for the now-fixed header
-     without disturbing the aspect-ratio-based sizing of the video. */
-  .hero { aspect-ratio: 375 / 658; margin-top: var(--header-h); }
+  /* Menu open: the header blends into the drawer instead of remaining a
+     separate gray bar, so it reads as one continuous panel. The dark
+     logo is swapped for the white variant to stay visible on the new
+     background. */
+  body.menu-open .header {
+    background: var(--color-dark-green);
+  }
+  body.menu-open .header__logo-dark { display: none; }
+  body.menu-open .header__logo-white { display: block; }
+
+  /* The X (open state) must stay readable regardless of what's behind
+     it, so it's pinned to white rather than following var(--color-text). */
+  .hamburger.is-open .hamburger__line {
+    background: #ffffff;
+  }
+
+  /* Hero: on SP the header is position:fixed (removed from flow), so
+     margin-top pushes the hero below it instead of hiding behind it.
+     The height itself is already header-adjusted in the base rule above. */
+  .hero { margin-top: var(--header-h); }
   .hero__logo { left: 3.47%; top: 41.49%; width: 93.07%; }
   .hero__copy { top: 82.5%; }
 
-  /* Concept: single column, text and images interleaved in one flow.
-     The wrapper divs are collapsed via display:contents so each
-     paragraph/image becomes an ordinary flex item of .concept__body,
-     which lets `order` interleave them without touching the PC markup. */
+  /* Concept: single column. The wrapper divs are collapsed via
+     display:contents so each paragraph/image becomes an ordinary flex
+     item, which lets `order` interleave them without touching the PC
+     markup. Text keeps a 20px inset via its own padding; images and
+     photos run full-bleed edge to edge, per the updated SP design. */
+  .concept { padding-left: 0; padding-right: 0; }
+  .concept .section-heading { padding-left: 20px; padding-right: 20px; }
+  .concept__group {
+    display: flex;
+    flex-direction: column;
+    gap: 60px;
+    width: 100%;
+  }
   .concept__body { flex-direction: column; padding: 0; gap: 24px; }
   .concept__text,
   .concept__images {
     display: contents;
   }
+  .concept__text p {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
   .concept__text p:nth-child(1) { order: 1; }
   .concept__text p:nth-child(2) { order: 3; }
   .concept__text p:nth-child(3) { order: 5; }
-  .concept__image--river2 { order: 2; }
-  .concept__image--river4 { order: 4; }
-  .concept__image--river3 { order: 6; }
+  .concept__image--river2 { order: 2; width: 100%; height: 164px; }
+  .concept__image--river4 { order: 4; width: 100%; height: 163px; }
+  .concept__image--river3 { order: 6; width: 100%; height: 164px; }
+
+  /* Photos: two overlapping full-bleed portraits (top-left / bottom-right),
+     replacing the PC-only absolute layout's numbers with SP-specific ones. */
   .concept__photos {
-    position: static;
-    height: auto;
     width: 100%;
+    height: 778px;
     padding: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
   }
-  .concept__photo { position: static; width: 100%; max-width: 100%; height: 200px; }
+  .concept__photo { max-width: none; }
+  .concept__photo--1 { left: 0; top: 0; right: auto; bottom: auto; width: 311px; height: 396px; }
+  .concept__photo--2 { left: auto; top: auto; right: 0; bottom: 0; width: 310px; height: 396px; }
 
   /* Stool: stack info above image */
   .stool__content { flex-direction: column; }
@@ -789,15 +913,49 @@ ol {
   .steps__item p { width: auto; white-space: nowrap; flex-shrink: 0; font-size: 15px; }
   .steps__item img { width: 120px; height: 100px; flex: none; }
 
-  /* Project: stacked, logo graphic moves below the text block */
+  /* Project: stacked, logo graphic moves below the text block. The
+     column layout puts text across the full width, so the PC left-to-right
+     gradient (transparent on the left) is swapped for a flat, stronger
+     overlay so the text stays readable everywhere. */
   .project__inner { flex-direction: column; align-items: flex-start; }
   .project__logo { order: 2; width: 100%; max-width: 100%; }
   .project__content { order: 1; }
+  .project::before { background: rgba(0, 0, 0, 0.6); }
 
-  /* Story: full image always visible instead of cropped */
+  /* Story: the section-wide book background is dropped on SP so it isn't
+     duplicated with the title block's own book image below. */
   .story { aspect-ratio: auto; }
-  .story__bg { object-fit: contain; }
+  .story__bg { display: none; }
   .story__inner { flex-direction: column; }
+
+  /* Story title block: book image sits behind the heading only (SP-only
+     treatment, sized/positioned independently of the PC .story__image).
+     The block is centered as a unit; .story__body and .btn-outline are
+     untouched, so they keep the .story__text flex-start (left) alignment. */
+  .story__title-block {
+    position: relative;
+    width: 297px;
+    max-width: 100%;
+    height: 198px;
+    align-self: center;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    overflow: hidden;
+  }
+  .story__title-bg {
+    display: block;
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: -1;
+  }
+  .story__label,
+  .story__title {
+    text-align: center;
+  }
 
   /* CTA: stacked buttons, full width */
   .cta__buttons { flex-direction: column; }
