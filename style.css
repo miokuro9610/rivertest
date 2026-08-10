@@ -1035,7 +1035,10 @@ ol {
 }
 
 .story__slide-image img {
-  width: 100%;
+  /* 80% of its previous size - only affects the map image (slide 1);
+     .story__slide-image--portrait img's own fixed 252px width below
+     still overrides this for slide 2's portrait photo. */
+  width: 80%;
   height: auto;
   object-fit: contain;
 }
@@ -1395,8 +1398,11 @@ ol {
        text is baked into the image itself, so cropping (the previous
        295/390 ratio was tuned for the old, differently-proportioned
        map image) could cut off part of it rather than just trimming
-       empty background. */
-    width: 100%;
+       empty background. 80% width (centered) matches the PC map
+       image's own 80% resize; .story__mobile-card-image--portrait
+       below keeps its own fixed width for slide 2's portrait photo. */
+    width: 80%;
+    margin: 0 auto;
     aspect-ratio: 697 / 1027;
     overflow: hidden;
   }
