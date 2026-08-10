@@ -1390,8 +1390,14 @@ ol {
   }
 
   .story__mobile-card-image {
+    /* Matches zu_ryuiki_river2.png's own 697x1027 ratio exactly, so
+       object-fit:cover below never has to crop it - the map's caption
+       text is baked into the image itself, so cropping (the previous
+       295/390 ratio was tuned for the old, differently-proportioned
+       map image) could cut off part of it rather than just trimming
+       empty background. */
     width: 100%;
-    aspect-ratio: 295 / 390;
+    aspect-ratio: 697 / 1027;
     overflow: hidden;
   }
 
