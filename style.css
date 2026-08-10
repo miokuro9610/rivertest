@@ -12,7 +12,7 @@
      exact PC number; between the two it scales linearly with viewport width. */
   --pad-x: clamp(20px, calc(-10px + 3.9062vw), 40px);
   --space-lg: clamp(60px, calc(-30px + 11.7188vw), 120px);
-  --header-h: clamp(60px, calc(0px + 7.8125vw), 100px);
+  --header-h: 75px;
   --logo-w: clamp(130px, calc(-5px + 17.5781vw), 220px);
 }
 
@@ -61,11 +61,44 @@ ol {
   border-bottom: 1px solid var(--color-text);
   width: 320px;
   max-width: 100%;
+  /* Shared placement for every .section-heading (concept/stool/story on
+     PC) - text hugs the right edge of the (320px) box, matching the
+     underline's own right edge. SP overrides this back to left-aligned
+     per-section where needed (see the SP media query). */
+  text-align: right;
 }
 
 .section-heading--light {
   color: var(--color-white);
   border-bottom-color: var(--color-white);
+}
+
+/* ---------- Scroll reveal (fade + slide up on first view) ---------- */
+
+/* JS (script.js) adds .is-visible via IntersectionObserver the first
+   time each .reveal element scrolls into view, then stops watching it -
+   this only ever plays once, it doesn't re-trigger scrolling back up.
+   Deliberately not used on the header, hero, the .story stack effect
+   (it already has its own scroll-driven animation - layering this on
+   top would fight it), buttons, the footer, or other small
+   always-visible controls. */
+.reveal {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.7s ease-out, transform 0.7s ease-out;
+}
+
+.reveal.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
 }
 
 /* ---------- Header ---------- */
@@ -82,14 +115,17 @@ ol {
   left: 0;
   z-index: 80;
   background: transparent;
+  color: var(--color-white);
   transition: background-color 0.3s ease;
 }
 
-/* PC: transparent over the hero, solid once scrolled past it (class is
-   toggled from script.js based on the hero's scroll position). SP
-   overrides this below to stay unconditionally #ACACAC. */
+/* Transparent + white text/logo over the hero; once scrolled past it
+   (class toggled from script.js based on the hero's scroll position)
+   a translucent gray bar with the original dark text/logo takes over.
+   Same behavior on PC and SP. */
 .header.is-scrolled {
-  background: #acacac;
+  background: rgba(172, 172, 172, 0.8);
+  color: var(--color-text);
 }
 
 .header__inner {
@@ -105,7 +141,18 @@ ol {
   height: auto;
 }
 
-.header__logo-white {
+/* White logo by default (matches the header's default white text over
+   the transparent hero); swaps to the dark logo once scrolled, in sync
+   with .header.is-scrolled's dark text. */
+.header__logo-dark {
+  display: none;
+}
+
+.header.is-scrolled .header__logo-dark {
+  display: block;
+}
+
+.header.is-scrolled .header__logo-white {
   display: none;
 }
 
@@ -175,8 +222,10 @@ ol {
   display: block;
   width: 28px;
   height: 1px;
-  background: var(--color-text);
-  transition: transform 0.4s cubic-bezier(0.22, 0.61, 0.36, 1), opacity 0.4s ease;
+  /* Follows .header's color (white over the hero, dark once scrolled)
+     instead of a fixed color, same as the nav link underlines. */
+  background: currentColor;
+  transition: transform 0.4s cubic-bezier(0.22, 0.61, 0.36, 1), opacity 0.4s ease, background-color 0.3s ease;
 }
 
 .hamburger.is-open .hamburger__line:nth-child(1) {
@@ -276,16 +325,14 @@ ol {
 .hero {
   position: relative;
   width: 100%;
-  /* The header is position:fixed (both PC and SP) and so out of normal
-     flow; margin-top pushes the hero below it instead of hiding behind
-     it, and the height is reduced by the same amount so margin + height
-     still add up to exactly one screen instead of overshooting it.
+  /* The header is position:fixed and transparent over the hero, so the
+     video should run the full viewport height, up to the very top,
+     showing through behind it - no offset for the header here.
      svh excludes mobile browser UI (address bar etc.) that can show/hide,
      so the hero doesn't jump/resize as that chrome appears; falls back
      to vh above where svh isn't supported. */
-  margin-top: var(--header-h);
-  height: calc(100vh - var(--header-h));
-  height: calc(100svh - var(--header-h));
+  height: 100vh;
+  height: 100svh;
   overflow: hidden;
 }
 
@@ -334,108 +381,86 @@ ol {
 
 /* ---------- Concept ---------- */
 
+/* Outer section: always full viewport width. Height is guaranteed to be
+   at least tall enough to show concept-bg.jpg's full 1365x2048 (~1:1.5)
+   without vertical cropping - aspect-ratio sets that as a *minimum*: a
+   block element is free to grow taller than its aspect-ratio when its
+   content needs the room (verified empirically), but it is never
+   shorter than the ratio demands, so the image is never cut off at the
+   bottom regardless of how much/little text .concept__inner holds.
+   The background image/gradient live here (not on .concept__inner) so
+   they aren't limited by the 1280px content column. No overflow:hidden
+   here - the bg/gradient are inset:0 so they never exceed this box
+   anyway, and clipping would cut off .concept__inner's text whenever
+   it needs to grow taller than the image's own ratio (e.g. on SP). */
 .concept {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1365 / 2048;
+  color: var(--color-white);
+}
+
+.concept__bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  /* The source photo is tall/portrait (1365x2048) with the stool and the
+     path's depth in its lower portion; the section is much wider than
+     tall (height is content-driven), so cover's default center crop was
+     scaling to fit the width and cutting the stool out of the visible
+     window entirely. Anchoring to the bottom keeps the full lower part
+     (stool + path) always in frame and crops from the tree canopy at
+     the top instead, which matters far less. */
+  object-position: center bottom;
+  z-index: -2;
+}
+
+.concept::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 1) 20%, rgba(0, 0, 0, 0) 50%);
+  z-index: -1;
+}
+
+.concept__inner {
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
   padding: var(--space-lg) var(--pad-x);
   display: flex;
   flex-direction: column;
-  gap: clamp(40px, calc(-20px + 7.8125vw), 80px);
-  max-width: 1280px;
-  margin: 0 auto;
-}
-
-.concept__group {
-  /* On PC this is a pass-through: .concept__body and .concept__photos
-     stay direct flex items of .concept, sharing its single gap value
-     (matches the original PC design, which never distinguished a
-     separate gap between them). SP gives this its own flex/gap so the
-     title-to-content and content-to-photos spacing can differ. */
-  display: contents;
-}
-
-.concept__body {
-  display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 40px;
-  padding: 0 clamp(0px, calc(-150px + 19.5312vw), 100px);
+  gap: clamp(40px, calc(-20px + 7.8125vw), 80px);
+}
+
+.concept__heading {
+  /* text-align:right now comes from the shared .section-heading rule -
+     this only needs to escape .concept__inner's align-items:center so
+     the box itself sits at the left instead of being centered. */
+  align-self: flex-start;
 }
 
 .concept__text {
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
   gap: 57px;
   font-size: clamp(15px, calc(13.5px + 0.1953vw), 16px);
   line-height: clamp(32px, calc(26px + 0.7812vw), 36px);
-}
-
-.concept__images {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: clamp(12px, calc(-66px + 10.1562vw), 64px);
-}
-
-.concept__image {
-  overflow: hidden;
-}
-
-.concept__image img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.concept__image--river2 {
-  width: clamp(241px, calc(-8px + 32.4219vw), 407px);
-  height: clamp(164px, calc(38px + 16.4062vw), 248px);
-}
-
-.concept__image--river4 {
-  width: clamp(159px, calc(-16.5px + 22.8516vw), 276px);
-  height: clamp(143px, calc(-14.5px + 20.5078vw), 248px);
-}
-
-.concept__image--river3 {
-  width: clamp(241px, calc(-8px + 32.4219vw), 407px);
-  height: clamp(147px, calc(-4.5px + 19.7266vw), 248px);
-}
-
-.concept__photos {
-  position: relative;
-  width: 100%;
-  height: 676px;
-  padding: 0 40px;
-}
-
-.concept__photo {
-  position: absolute;
-  width: 690px;
-  height: 410px;
-  max-width: 55%;
-}
-
-.concept__photo img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.concept__photo--1 {
-  left: 0;
-  top: 0;
-}
-
-.concept__photo--2 {
-  left: 42%;
-  top: 266px;
 }
 
 /* ---------- Stool ---------- */
 
 .stool {
   background: var(--color-dark-green);
-  padding: var(--space-lg) 40px;
+  /* Was a fixed 40px - only identical to .concept/.story's fluid
+     var(--pad-x) at the PC max breakpoint (also 40px); at every other
+     width, including SP (pad-x 20px), it put .stool's heading 20px+
+     further right than the other two sections' headings. */
+  padding: var(--space-lg) var(--pad-x);
   display: flex;
   justify-content: center;
 }
@@ -620,27 +645,43 @@ ol {
   flex: 1;
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: clamp(24px, calc(-3px + 3.5156vw), 42px);
 }
 
 .detail__text h3 {
+  /* .detail__text centers its children as a group (align-items:center);
+     without this the heading's own box shrinks to its text width and
+     sits centered in the column instead of starting flush left. */
+  align-self: flex-start;
+  text-align: left;
   font-weight: 400;
   font-size: clamp(24px, calc(12px + 1.5625vw), 32px);
   line-height: clamp(24px, calc(-3px + 3.5156vw), 42px);
 }
 
 .detail__text p {
+  /* .detail__text centers its children as a group (align-items:center);
+     h3 already escapes that via align-self:flex-start, but p never got
+     the same override, so its own (narrower, shrink-to-fit) box stayed
+     centered instead of sharing h3's flush-left edge. */
+  align-self: flex-start;
   font-size: clamp(15px, calc(13.5px + 0.1953vw), 16px);
   line-height: clamp(32px, calc(26px + 0.7812vw), 36px);
 }
 
 .detail__image {
-  flex: 1;
+  /* A little wider than the text column (was an even 1:1 split, both
+     flex:1, matching Figma's 600/600 columns) - text now centers
+     within its own column instead of needing the full width, so the
+     video can afford to take more of the row. */
+  flex: 1.3;
   width: 100%;
-  aspect-ratio: 600 / 545;
+  aspect-ratio: 600 / 480;
 }
 
-.detail__image img {
+.detail__image img,
+.detail__image video {
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -764,85 +805,70 @@ ol {
   object-fit: cover;
 }
 
-/* ---------- Project (流域プロジェクトとは) ---------- */
-
-.project {
-  position: relative;
-  padding: var(--space-lg) var(--pad-x);
+/* Tabletop close-up, directly below the joint/steps section. It's a
+   normal block sitting outside the .steps horizontal-scroll container
+   entirely, so there is no scrolling for it to stay "fixed" against in
+   the first place - position:sticky has nothing to stick to here. What
+   was actually needed was simpler: flush the image to the right edge
+   (full-bleed, no container padding eating into its right side)
+   instead of the standard centered/padded content column. */
+.joint-photo {
+  width: 100%;
   display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  color: var(--color-white);
-  overflow: hidden;
+  justify-content: flex-end;
 }
 
-.project__bg {
-  position: absolute;
-  inset: 0;
+.joint-photo img {
   width: 100%;
-  height: 100%;
+  max-width: 1259px;
+  aspect-ratio: 1259 / 686;
   object-fit: cover;
-  z-index: -2;
-}
-
-.project::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(to right, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.4) 46.154%);
-  z-index: -1;
-}
-
-.project__inner {
-  display: flex;
-  align-items: flex-end;
-  gap: clamp(40px, calc(7px + 4.2969vw), 62px);
-  width: 100%;
-  max-width: 1200px;
-}
-
-.project__logo {
-  width: 543px;
-  max-width: 40%;
-  height: auto;
-  opacity: 0.8;
-}
-
-.project__content {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: clamp(36px, calc(46px - 0.7812vw), 40px);
-}
-
-.project__block {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.project__block h3 {
-  font-weight: 400;
-  font-size: 20px;
-  line-height: 42px;
-}
-
-.project__block p {
-  font-size: clamp(15px, calc(13.5px + 0.1953vw), 16px);
-  line-height: clamp(32px, calc(26px + 0.7812vw), 36px);
 }
 
 /* ---------- Story (制作ストーリー) ---------- */
 
+/* Sticky-stack: .story__panel--base (background photo + "制作ストーリー"
+   title + "水から考えるものづくり" card, all one unit) pins to top:0 for
+   the section's entire scroll and never moves. After a 40vh spacer,
+   .story__panel--overlay ("yamatowa x inquire", no photo of its own -
+   the base's photo stays visible around it) rises up from below in
+   normal document flow and, being later in the DOM with a higher
+   z-index, fully covers it. .story__stage's height controls the
+   distance: 100vh for the base panel's own box, then 40vh spacer +
+   100vh for the overlay to rise and cover + 60vh dwell = 200vh, for a
+   300vh total - which is exactly how long .story__panel--base (whose
+   sticky containing block is .story__stage) stays pinned. */
 .story {
   position: relative;
+}
+
+.story__stage {
+  position: relative;
+  height: 300vh;
+}
+
+.story__panel {
+  position: sticky;
+  top: 0;
+  height: 100vh;
   width: 100%;
-  aspect-ratio: 1281 / 942;
-  padding: var(--space-lg) clamp(20px, calc(-250px + 35.1562vw), 200px);
+  overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
-  overflow: hidden;
+  color: var(--color-white);
+}
+
+.story__panel--base {
+  z-index: 1;
+}
+
+.story__panel--overlay {
+  z-index: 2;
+}
+
+.story__spacer {
+  height: 40vh;
 }
 
 .story__bg {
@@ -854,60 +880,258 @@ ol {
   z-index: -1;
 }
 
-.story__inner {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: clamp(40px, calc(7px + 4.2969vw), 62px);
+/* The ONE place any "shift the whole book+title unit" offset is
+   declared (PC-only, see below) - .story__title and .story__card-wrap
+   are positioned inside this via plain top/inset values, and both
+   move together automatically because they're descendants of this
+   transformed box, not because each carries its own transform. */
+.story__panel-inner {
+  position: relative;
   width: 100%;
-  max-width: 1200px;
+  max-width: 1280px;
+  height: 100%;
+  margin: 0 auto;
 }
 
-.story__text {
+/* Positioned independently of .story__card-wrap (fixed top offset,
+   not a flex sibling it shares space with) - .story__panel--overlay
+   has no title, so if the card centered within "whatever space is left
+   after the title" it would get a taller box than .story__panel--base's
+   card and land at a different position once the two overlap. Both
+   panels now give the card the exact same box regardless. */
+.story__title {
+  position: absolute;
+  top: 100px;
+  left: var(--pad-x);
+}
+
+/* Fixed top/bottom inset (100px, matching .story__title's own offset
+   above) instead of flex-sharing space with the title, so base's and
+   overlay's cards always center within an identical box and land at
+   identical coordinates when overlay covers base - see .story__title.
+   overflow-x is set to visible (not left to default) because Chrome/
+   Firefox silently force it to auto/clip whenever overflow-y isn't
+   visible - without this the 110%-scaled book image in .story__slide-bg
+   below would get clipped on the sides. */
+.story__card-wrap {
+  position: absolute;
+  /* Top inset cleared to sit below .story__title (top:100px + its own
+     ~33px height + a 32px gap = 165px) - previously this also started
+     at 100px, the same offset as the title, so their boxes always
+     technically overlapped. It stayed invisible at some viewport
+     heights only because the book image (object-fit:contain) leaves a
+     variable empty margin above itself depending on how much of this
+     box its own aspect ratio lets it fill - taller viewports shrink
+     that margin and exposed the overlap. */
+  inset: 165px var(--pad-x) 100px;
+  display: flex;
+  flex-direction: column;
+  justify-content: safe center;
+  /* MUST stay visible (never auto/hidden/scroll) - .story__slide-bg
+     (the book image) lives inside, deliberately drawn larger than its
+     own box (currently scale(1.1)), and needs room to render past this
+     box's edges without being cut off. This has regressed more than
+     once: setting overflow-y to anything but visible here - even with
+     overflow-x explicitly still "visible" - makes Chrome/Firefox force
+     BOTH axes to clip (a browser overflow-x/y interaction, not
+     something this project's CSS can override by being more specific).
+     If text content ever needs its own scroll fallback again, it must
+     be scoped to .story__slide-content below, never to this element or
+     to .story__slide - both must remain overflow:visible permanently. */
+  overflow: visible;
+}
+
+.story__card-wrap > * {
+  flex-shrink: 0;
+}
+
+/* .story__slide-bg (book image) and .story__slide-content (its text +
+   map/portrait image) are both position:absolute; inset:0 - fixed,
+   deterministic coordinates computed the same way as .story__title and
+   .story__card-wrap above, not flex-centered. Flex centering
+   (align-items/justify-content on a flex parent) recomputes on every
+   layout pass and depends on the content's own measured size, which
+   can differ by sub-pixel amounts between reflows (e.g. web font
+   swap, a scrollbar toggling in .story__slide-content below) - that
+   was read as the text/map "still moving slightly" while the
+   absolutely-positioned book image and title never did. */
+.story__slide {
+  position: relative;
+  height: 100%;
+  overflow: visible;
+  color: var(--color-text);
+}
+
+.story__slide-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  /* Scaled up 10% from the previous size - at that size the book's
+     illustrated edges sat too close to (sometimes inside) the text,
+     which could then overflow past them. Rendering past its own box
+     like this is exactly why .story__card-wrap/.story__slide above
+     must never clip. */
+  transform: scale(1.1);
+  transform-origin: center;
+  z-index: -1;
+}
+
+.story__slide-content {
+  position: absolute;
+  inset: 0;
+  /* Was overflow-y:auto as a fallback for copy taller than this box -
+     but on the rare viewport short enough to actually need it, that
+     created a genuine internal scroll container. Scrolling the page
+     with the cursor over this element then let the browser's default
+     scroll-chaining route wheel input into THIS scrollbar first,
+     moving the text independently of the page (and the book image,
+     which has nothing to chain into). Content is comfortably shorter
+     than this box at realistic viewport heights (~900px+); on unusually
+     short ones it now simply extends past the box rather than
+     scrolling or clipping - never adds its own scroll position for
+     wheel input to chain into. */
+  overflow: visible;
+  display: flex;
+  align-items: center;
+  gap: 72px;
+  padding: 60px 140px 100px 160px;
+}
+
+.story__slide-text {
   flex: 1;
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
   gap: 24px;
 }
 
-.story__title-block {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-}
-
-.story__title-bg {
-  display: none;
-}
-
-.story__label {
+.story__slide-title {
   font-size: 20px;
-  line-height: 20px;
+  line-height: 36px;
+  white-space: nowrap;
 }
 
-.story__title {
+.story__slide-title--serif {
   font-family: var(--font-garamond);
   font-weight: 500;
   font-size: 32px;
   line-height: 42px;
 }
 
-.story__body {
+.story__slide-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
   font-size: clamp(15px, calc(13.5px + 0.1953vw), 16px);
   line-height: clamp(32px, calc(26px + 0.7812vw), 36px);
 }
 
-.story__image {
+.story__slide-image {
   flex: 1;
   display: flex;
+  align-items: center;
   justify-content: center;
 }
 
-.story__image img {
+.story__slide-image img {
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+}
+
+.story__slide-image--portrait img {
   width: 252px;
   height: 419px;
   object-fit: cover;
+}
+
+/* SP-only alternative to .story__stage (Figma node 388-607): a plain
+   top-to-bottom scroll, no position:sticky/stacking effect. Both exist
+   in the DOM at all times and are swapped via display in the SP media
+   query below, rather than duplicating the section with JS. */
+.story__mobile {
+  display: none;
+}
+
+/* ---------- Movie (CONCEPT MOVIE) ---------- */
+
+.movie {
+  position: relative;
+  width: 100%;
+  /* Sized to movie-bg.jpg's own 2048x1365 pixel ratio so the section is
+     always tall enough to show the whole photo - aspect-ratio acts as a
+     minimum (content can still grow it), and object-fit:contain (rather
+     than cover) guarantees the image itself is never cropped even if
+     content ever forces the box past that ratio. */
+  aspect-ratio: 2048 / 1365;
+  /* .movie__inner is a normal block by default, so without this it
+     sizes to its own content and sits at the top of the (much taller)
+     aspect-ratio box instead of in the true center. */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.movie__bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  z-index: -1;
+}
+
+.movie__inner {
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: var(--space-lg) var(--pad-x);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(32px, calc(20.4px + 3.0939vw), 60px);
+}
+
+.movie__title {
+  font-family: var(--font-garamond);
+  font-weight: 400;
+  font-size: clamp(32px, calc(18.74px + 3.5359vw), 64px);
+  line-height: 1.25;
+  color: var(--color-white);
+  text-align: center;
+}
+
+.movie__play {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: clamp(14px, calc(11.51px + 0.6629vw), 20px) clamp(32px, calc(20.4px + 3.0939vw), 60px);
+  border-radius: 50px;
+  border: 1px solid var(--color-white);
+  background: rgba(6, 6, 6, 0.3);
+  cursor: pointer;
+  transition: opacity 0.3s ease;
+}
+
+.movie__play span {
+  font-family: var(--font-antique);
+  font-size: 16px;
+  line-height: 36px;
+  color: var(--color-white);
+  white-space: nowrap;
+}
+
+.movie__play img {
+  width: 12px;
+  height: 24px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .movie__play:hover {
+    opacity: 0.5;
+  }
 }
 
 /* ---------- CTA ---------- */
@@ -928,6 +1152,11 @@ ol {
 }
 
 .cta__buttons {
+  position: relative;
+  /* .footer__chair (z-index:1) is deliberately allowed to paint over
+     .cta's plain background/bottom padding for the overlap effect, but
+     must never cover the buttons themselves. */
+  z-index: 2;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -938,14 +1167,55 @@ ol {
 /* ---------- Footer ---------- */
 
 .footer {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: var(--pad-x) 0;
+  position: relative;
+  padding-bottom: 0;
   font-family: var(--font-zen);
   font-size: 14px;
   line-height: 22px;
   text-align: center;
+}
+
+.footer__inner {
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Figma has this photo's box overlapping 88.58px up into the CTA
+   section above, at a 1112px/531px box within the 1280px frame - both
+   expressed here as percentages of the shared 1280px container width
+   (6.92% / 69.3%) so the overlap scales fluidly and stays proportional
+   to the image's own (also fluid) width at any breakpoint, PC or SP. */
+.footer__chair-wrap {
+  position: relative;
+  z-index: 1;
+  width: 69.3%;
+  margin-top: -6.92%;
+}
+
+.footer__chair {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* Sits in the gap between the stool's two front legs, over the image
+   itself, instead of taking up its own row below it - keeps the whole
+   footer short instead of adding a full text row's worth of height. */
+.footer p {
+  position: absolute;
+  left: 50%;
+  top: 87%;
+  transform: translate(-50%, -50%);
+  width: 44%;
+  padding: 0;
+  /* PC size; SP overrides this to 9px (see the SP media query) to keep
+     the longer line fitting in one row over the smaller chair photo. */
+  font-size: 14px;
+  line-height: 16px;
 }
 
 /* ---------- SP (<=768px): structural layout switches ---------- */
@@ -954,28 +1224,33 @@ ol {
   /* Header: swap nav for hamburger, pin header to the top of the viewport */
   .header__nav { display: none; }
   .hamburger { display: flex; }
-  /* position/top/left/z-index/transition already come from the base
-     .header rule. SP just needs to stay unconditionally #ACACAC instead
-     of following the PC scroll-based .is-scrolled toggle - see below for
-     why header must stay a winning, un-nested z-index (65/60 are
-     .mobile-menu/.mobile-menu-backdrop). */
-  .header,
-  .header.is-scrolled {
+  /* Unlike PC, SP keeps the header's solid gray background even over
+     the hero - no transparent/white first-view state - so it needs its
+     own (dark-on-gray) colors here instead of the base rule's
+     transparent+white default. .header.is-scrolled is untouched and
+     still applies its own rgba(172,172,172,0.8) once scrolled. */
+  .header {
     background: #acacac;
+    color: var(--color-text);
   }
+  .header__logo-dark { display: block; }
+  .header__logo-white { display: none; }
 
   /* Menu open: instead of the header's own gray bar staying visible
      above the drawer, make it transparent so the drawer (which now runs
      the full page height, see .mobile-menu) shows through in its place.
-     The header stays on top (z-index above), so the logo/hamburger keep
-     rendering over the drawer even though the bar itself is invisible.
-     Since the dark green drawer is now what's behind them, the dark
-     logo/icon swap to white so they stay readable there. */
+     The header stays on top (z-index above) so the hamburger/close icon
+     keeps rendering over the drawer even though the bar itself is
+     invisible - but the header's own logo has to be hidden here too,
+     since .mobile-menu already renders its own logo (.mobile-menu__logo)
+     and, being part of the still-elevated .header, it would otherwise
+     float on top of the drawer as a duplicate. */
   body.menu-open .header {
     background: transparent;
   }
-  body.menu-open .header__logo-dark { display: none; }
-  body.menu-open .header__logo-white { display: block; }
+  body.menu-open .header__logo {
+    visibility: hidden;
+  }
   .hamburger.is-open .hamburger__line {
     background: #ffffff;
   }
@@ -986,54 +1261,51 @@ ol {
   .hero__logo { left: 3.47%; top: 41.49%; width: 93.07%; }
   .hero__copy { top: 82.5%; }
 
-  /* Concept: single column. The wrapper divs are collapsed via
-     display:contents so each paragraph/image becomes an ordinary flex
-     item, which lets `order` interleave them without touching the PC
-     markup. Text keeps a 20px inset via its own padding; images and
-     photos run full-bleed edge to edge, per the updated SP design. */
-  .concept { padding-left: 0; padding-right: 0; }
-  .concept .section-heading { padding-left: 20px; padding-right: 20px; }
-  .concept__group {
-    display: flex;
-    flex-direction: column;
-    gap: 60px;
-    width: 100%;
-  }
-  .concept__body { flex-direction: column; padding: 0; gap: 24px; }
-  .concept__text,
-  .concept__images {
-    display: contents;
-  }
-  .concept__text p {
-    padding-left: 20px;
-    padding-right: 20px;
-  }
-  .concept__text p:nth-child(1) { order: 1; }
-  .concept__text p:nth-child(2) { order: 3; }
-  .concept__text p:nth-child(3) { order: 5; }
-  .concept__image--river2 { order: 2; width: 100%; height: 164px; }
-  .concept__image--river4 { order: 4; width: 100%; height: 163px; }
-  .concept__image--river3 { order: 6; width: 100%; height: 164px; }
+  /* Section headings: one shared rule for every .section-heading
+     (concept/stool/story) instead of overriding it per section - it
+     was only ever being added to .concept__heading, leaving .stool's
+     and .story__title's still right-aligned (the base rule's default)
+     and visibly inconsistent on SP. */
+  .section-heading { text-align: left; }
 
-  /* Photos: two overlapping full-bleed portraits (top-left / bottom-right),
-     replacing the PC-only absolute layout's numbers with SP-specific ones. */
-  .concept__photos {
-    width: 100%;
-    height: 778px;
-    padding: 0;
-  }
-  .concept__photo { max-width: none; }
-  .concept__photo--1 { left: 0; top: 0; right: auto; bottom: auto; width: 311px; height: 396px; }
-  .concept__photo--2 { left: auto; top: auto; right: 0; bottom: 0; width: 310px; height: 396px; }
+  /* Concept: push the heading down clear of the fixed header, and add
+     enough room below the body copy that the background photo's stool
+     lands below the text instead of behind/overlapping it. The section
+     is already much taller than .concept__bg's own 1365:2048 ratio at
+     this point (copy alone pushes it well past that), which means
+     object-fit:cover is showing the photo's full height with no
+     vertical cropping - the stool sits at a fixed ~63.5% down the
+     photo regardless of the section's height, so reaching it requires
+     growing the section enough that 63.5% of its height clears the
+     text, not just adding a small fixed gap. */
+  .concept__inner { padding-top: 90px; padding-bottom: 670px; }
 
-  /* Stool: stack info above image */
+  /* Stool: stack info above image, and match .concept__inner's
+     header-clearance padding-top (90px) - .stool's own default here is
+     var(--space-lg), which clamps to 60px on SP, 15px short of the
+     75px fixed header height, so the heading sat partly behind it. */
+  .stool { padding-top: 90px; }
   .stool__content { flex-direction: column; }
 
   /* Detail: stack text above image (both blocks, incl. the reversed one) */
   .detail__row, .detail__row--reverse { flex-direction: column; }
+  /* align-items:center (from the PC row layout, where it verticaly
+     centers the row) becomes a horizontal cross-axis rule once the
+     column direction above kicks in - without stretch here, .detail__text
+     shrinks to its own content's natural wrap width instead of the full
+     column width, and then gets centered under that width instead of
+     lining up with .detail__image's left edge. Whether this was visible
+     depended on how wide that particular block's copy happened to wrap. */
+  .detail__row, .detail__row--reverse { align-items: stretch; }
   .detail__row--reverse .detail__text { order: 1; }
   .detail__row--reverse .detail__image { order: 2; }
   .detail__image { aspect-ratio: auto; height: 212px; }
+  /* Left-align the whole text block (heading+body) instead of centering
+     it as a group, so its left edge lines up with the image/video's
+     left edge above/below it. */
+  .detail__text { align-items: flex-start; }
+  .detail__text h3 { font-size: 18px; }
+  .detail__text p { font-size: 15px; }
 
   /* Joint ("吸い付き桟とは"): SP-only spacing/type tweaks */
   .joint { margin-bottom: 60px; }
@@ -1041,38 +1313,74 @@ ol {
   .steps__item-title { font-size: 16px; }
   .steps__item-step { font-size: 16px; }
 
-  /* Project: stacked, logo graphic moves below the text block. The
-     column layout puts text across the full width, so the PC left-to-right
-     gradient (transparent on the left) is swapped for a flat, stronger
-     overlay so the text stays readable everywhere. */
-  .project__inner { flex-direction: column; align-items: flex-start; }
-  .project__logo { order: 2; width: 100%; max-width: 100%; }
-  .project__content { order: 1; }
-  .project::before { background: rgba(0, 0, 0, 0.6); }
-
-  /* Story: the section-wide book background is dropped on SP so it isn't
-     duplicated with the title block's own book image below. */
-  .story { aspect-ratio: auto; }
-  .story__bg { display: none; }
-  .story__inner { flex-direction: column; }
-
-  /* Story title block: book image sits behind the heading only (SP-only
-     treatment, sized/positioned independently of the PC .story__image).
-     The block is centered as a unit; .story__body and .btn-outline are
-     untouched, so they keep the .story__text flex-start (left) alignment. */
-  .story__title-block {
-    position: relative;
-    width: 297px;
-    max-width: 100%;
-    height: 198px;
-    align-self: center;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
+  /* Joint photo: scale up 20% from its right edge. transform-origin's
+     vertical component is "center", so the extra 20% grows 10% above
+     AND 10% below the image's own box, not just sideways - html's
+     overflow-x:hidden caught the horizontal half of that, but nothing
+     was clipping the vertical half, so it bled into the sections
+     directly above and below this block (which sit flush against it,
+     no gap). overflow:hidden here contains it to this block only. */
+  .joint-photo {
     overflow: hidden;
   }
-  .story__title-bg {
+  .joint-photo img {
+    transform: scale(1.2);
+    transform-origin: right center;
+  }
+
+  /* Story: PC's fixed+stacking scroll effect (.story__stage) is swapped
+     for Figma's plain top-to-bottom layout (.story__mobile, node
+     388-607) - .story__slide-title/-body are still shared with the PC
+     markup for consistent type, but .story__slide-content/-bg and the
+     book-shaped background don't apply here at all since .story__mobile
+     uses its own simpler card structure below. */
+  .story__stage { display: none; }
+  .story__slide-title { white-space: normal; }
+
+  .story__mobile {
     display: block;
+    position: relative;
+  }
+
+  .story__mobile-bg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: -2;
+  }
+
+  /* Same 40% black scrim as the PC background photo, keeping the white
+     title readable against it. */
+  .story__mobile::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: -1;
+  }
+
+  .story__mobile-inner {
+    /* Top matches .concept__inner's header-clearance value (90px) -
+       the Figma spec's 60px left the heading partly behind the fixed
+       75px header, same issue as .stool above. */
+    padding: 90px 20px 60px;
+    display: flex;
+    flex-direction: column;
+    gap: 36px;
+  }
+
+  .story__mobile-card {
+    position: relative;
+    padding: 24px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    color: var(--color-text);
+  }
+
+  .story__mobile-card-bg {
     position: absolute;
     inset: 0;
     width: 100%;
@@ -1080,12 +1388,72 @@ ol {
     object-fit: cover;
     z-index: -1;
   }
-  .story__label,
-  .story__title {
-    text-align: center;
+
+  .story__mobile-card-image {
+    width: 100%;
+    aspect-ratio: 295 / 390;
+    overflow: hidden;
+  }
+
+  .story__mobile-card-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .story__mobile-card-image--portrait {
+    width: 239px;
+    max-width: 100%;
+    aspect-ratio: 239 / 390;
+    margin: 0 auto;
   }
 
   /* CTA: stacked buttons, full width */
   .cta__buttons { flex-direction: column; }
   .btn-large { width: 100%; }
+  /* +40px over the existing 60px, so the "お問い合わせ" button and the
+     footer chair image below no longer sit flush against each other. */
+  .cta { padding-bottom: 100px; }
+
+  /* Footer: scale the chair photo up 20% from its bottom edge (the
+     edge itself stays put, the image grows upward/outward around it -
+     transform doesn't affect layout, so nothing else here needs to
+     move to make room). The copyright is free to overlap the now-
+     larger image and just needs to fit on one line instead of staying
+     inside the narrow leg gap. */
+  .footer__chair {
+    transform: scale(1.2);
+    transform-origin: bottom center;
+  }
+  .footer p {
+    width: auto;
+    max-width: none;
+    white-space: nowrap;
+    font-size: 9px;
+  }
+}
+
+/* ---------- PC (>=769px): position-only tweaks ---------- */
+
+@media (min-width: 769px) {
+  /* Story: shift the book image + its text down 20px. One transform on
+     .story__panel-inner (present in both .story__panel--base and
+     .story__panel--overlay) instead of separate transforms on
+     .story__title and .story__card-wrap - they move together because
+     both are its descendants, not because each is told individually
+     to move. .story__bg (the forest photo) lives outside
+     .story__panel-inner, so it's intentionally not part of this shift. */
+  .story__panel-inner {
+    transform: translateY(20px);
+  }
+
+  /* An additional 5px, specifically for the book image + its contents
+     (shared by both .story__panel--base's and .story__panel--overlay's
+     card, since .story__slide is the same class in both) - stacks on
+     top of .story__panel-inner's 20px above since .story__slide is
+     nested inside it, landing 25px below the un-shifted position while
+     .story__title (not part of .story__slide) stays at 20px. */
+  .story__slide {
+    transform: translateY(5px);
+  }
 }

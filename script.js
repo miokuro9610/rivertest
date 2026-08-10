@@ -15,6 +15,44 @@
 })();
 
 (function () {
+  // Fade + slide-up reveal for .reveal elements the first time they
+  // scroll into view (see style.css for what's deliberately excluded -
+  // header, hero, buttons, footer, etc).
+  //
+  // .story__stage (PC's fixed+stacking scroll effect: background+title+
+  // water-card pinned, "yamatowa x inquire" rising to cover them) is
+  // explicitly excluded here too, defensively, at the selection step -
+  // not just by omitting the .reveal class in the HTML - so this
+  // observer can never add opacity/transform to anything inside it,
+  // even if a future edit accidentally adds that class there. It
+  // manages its own opacity/transform entirely through its own scroll-
+  // linked positioning; layering this generic animation on top of that
+  // would fight it. .story__mobile (SP's separate, non-stacking normal-
+  // scroll version of the same content) has no such conflict and keeps
+  // its reveal animation.
+  var els = Array.prototype.slice.call(document.querySelectorAll('.reveal')).filter(function (el) {
+    return !el.closest('.story__stage');
+  });
+  if (!els.length) return;
+
+  if (!('IntersectionObserver' in window)) {
+    els.forEach(function (el) { el.classList.add('is-visible'); });
+    return;
+  }
+
+  var observer = new IntersectionObserver(function (entries) {
+    entries.forEach(function (entry) {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('is-visible');
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.15, rootMargin: '0px 0px -60px 0px' });
+
+  els.forEach(function (el) { observer.observe(el); });
+})();
+
+(function () {
   var toggle = document.getElementById('menuToggle');
   var menu = document.getElementById('mobileMenu');
   var backdrop = document.getElementById('menuBackdrop');
@@ -153,3 +191,5 @@
   prev.addEventListener('click', function () { step(-1); });
   next.addEventListener('click', function () { step(1); });
 })();
+
+
