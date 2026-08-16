@@ -127,6 +127,14 @@
     dot.setAttribute('aria-current', 'true');
   }
 
+  function step(direction) {
+    var activeIndex = dots.findIndex(function (d) {
+      return d.classList.contains('is-active');
+    });
+    var nextIndex = (activeIndex + direction + dots.length) % dots.length;
+    activate(dots[nextIndex]);
+  }
+
   dots.forEach(function (dot) {
     dot.addEventListener('click', function () {
       activate(dot);
@@ -134,12 +142,34 @@
   });
 
   if (mainImageWrap) {
+    // SP: swipe left/right to move next/previous. touchend fires before
+    // the browser's synthesized click for the same tap, so a flag lets
+    // the click handler below skip its own "advance" when the gesture
+    // was already handled as a swipe - otherwise a swipe would both
+    // navigate itself AND trigger an extra forward step from the click.
+    var touchStartX = 0;
+    var wasSwipe = false;
+    var SWIPE_THRESHOLD = 40;
+
+    mainImageWrap.addEventListener('touchstart', function (e) {
+      touchStartX = e.changedTouches[0].clientX;
+      wasSwipe = false;
+    }, { passive: true });
+
+    mainImageWrap.addEventListener('touchend', function (e) {
+      var deltaX = e.changedTouches[0].clientX - touchStartX;
+      if (Math.abs(deltaX) > SWIPE_THRESHOLD) {
+        wasSwipe = true;
+        step(deltaX < 0 ? 1 : -1);
+      }
+    }, { passive: true });
+
     mainImageWrap.addEventListener('click', function () {
-      var activeIndex = dots.findIndex(function (d) {
-        return d.classList.contains('is-active');
-      });
-      var nextIndex = (activeIndex + 1) % dots.length;
-      activate(dots[nextIndex]);
+      if (wasSwipe) {
+        wasSwipe = false;
+        return;
+      }
+      step(1);
     });
   }
 })();
