@@ -145,6 +145,47 @@
 })();
 
 (function () {
+  // "You can interact with this" hint: shown once automatically the
+  // first time the gallery scrolls into view, then only on demand -
+  // continuously while hovering on PC (handled entirely in CSS, see
+  // .stool__image:hover), or as a brief flash on tap on SP (no hover
+  // state to hold it open there).
+  var image = document.querySelector('.stool__image');
+  var arrow = document.querySelector('.stool__arrow');
+  if (!image || !arrow) return;
+
+  var hideTimer = null;
+
+  function showArrow(autoHideDelay) {
+    arrow.classList.add('is-visible');
+    if (hideTimer) clearTimeout(hideTimer);
+    if (autoHideDelay) {
+      hideTimer = setTimeout(function () {
+        arrow.classList.remove('is-visible');
+      }, autoHideDelay);
+    }
+  }
+
+  if ('IntersectionObserver' in window) {
+    var revealObserver = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (entry.isIntersecting) {
+          showArrow(2500);
+          revealObserver.disconnect();
+        }
+      });
+    }, { threshold: 0.4 });
+    revealObserver.observe(image);
+  } else {
+    showArrow(2500);
+  }
+
+  image.addEventListener('click', function () {
+    showArrow(1200);
+  });
+})();
+
+(function () {
   var container = document.getElementById('heroLogo');
   if (!container || typeof lottie === 'undefined' || !window.__HERO_LOGO_DATA) return;
 

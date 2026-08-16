@@ -521,6 +521,7 @@ ol {
 }
 
 .stool__image {
+  position: relative;
   width: 100%;
   aspect-ratio: 621 / 672;
   cursor: pointer;
@@ -532,11 +533,50 @@ ol {
   object-fit: cover;
 }
 
+/* Swipe/rotate hint overlay (Figma node 400:358, icon_arrow.png at its
+   native 406x74px, positioned ~centered on the product photo - left/
+   right insets and vertical centering computed from that node's own
+   3.5px/406px/187px/74px against the 414x448px image box it sits on).
+   Hidden by default; JS (script.js) toggles .is-visible for the one-
+   time reveal on first view and the SP tap-flash, PC hover is handled
+   entirely in CSS below. pointer-events:none so it never blocks clicks
+   on the image itself (which advance the gallery). */
+/* .stool__image .stool__arrow (2 classes) rather than just .stool__arrow,
+   so this beats .stool__image img's width/height:100% (1 class + 1
+   element) on specificity - otherwise that rule would stretch this
+   overlay to fill the whole photo instead of sizing it from its own
+   aspect-ratio. */
+.stool__image .stool__arrow {
+  position: absolute;
+  left: 0.85%;
+  right: 1.09%;
+  top: 50%;
+  transform: translateY(-50%);
+  width: auto;
+  height: auto;
+  aspect-ratio: 406 / 74;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.4s ease;
+}
+
+.stool__arrow.is-visible {
+  opacity: 1;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .stool__image:hover .stool__arrow {
+    opacity: 1;
+  }
+}
+
 .stool__dots {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
+  /* Figma's gallery (node 347-354) has no dot indicator at all - just
+     the rotate/swipe arrow hint - so this is hidden rather than shown
+     alongside it. Still in the DOM (and still functional if clicked
+     programmatically), just not visible/reachable by users; clicking
+     the product photo itself still cycles through all three images. */
+  display: none;
 }
 
 .stool__dot {
